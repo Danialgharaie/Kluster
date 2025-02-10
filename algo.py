@@ -1,6 +1,6 @@
 from itertools import combinations_with_replacement as cwr
 from multiprocessing import Pool
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -92,7 +92,7 @@ def perform_clustering(
     perplexity: float = 30.0,
     n_neighbors: int = 15,
     min_dist: float = 0.1,
-) -> np.ndarray:
+) -> Tuple[np.ndarray, np.ndarray]:
     """Perform dimensionality reduction on the flattened feature matrix.
     
     Args:
@@ -105,7 +105,9 @@ def perform_clustering(
         min_dist: UMAP min_dist parameter
     
     Returns:
-        np.ndarray: Reduced dimensional representation of shape (n, dimensions)
+        tuple[np.ndarray, np.ndarray]: 
+            - Reduced dimensional representation of shape (n, dimensions)
+            - Processed input matrix after imputation and scaling
     """
     import warnings
     warnings.filterwarnings('ignore', category=FutureWarning)
@@ -142,7 +144,7 @@ def perform_clustering(
             n_jobs=-1,  # Use all available cores
         ).fit_transform(matrix_processed)
 
-    return proj
+    return proj, matrix_processed
 
 
 def visualize_projection(

@@ -2,6 +2,8 @@ import argparse
 import glob
 import os
 
+import pandas as pd
+
 from algo import compute_distance_matrix, perform_clustering, visualize_projection
 from align import check_alignment_tool
 
@@ -66,8 +68,8 @@ def parse_args():
     parser.add_argument(
         "--matrix-out",
         type=str,
-        default="distance_matrix.tsv",
-        help="Output file for the distance matrix (TSV format)",
+        default="processed_matrix.tsv",
+        help="Output file for the processed feature matrix (TSV format)",
     )
     parser.add_argument(
         "--scale",
@@ -128,15 +130,9 @@ def main():
         num_processes=args.processes,
     )
 
-    # Save distance matrix
-    protein_ids = sorted(proteins.keys())
-    import pandas as pd
-    df_matrix = pd.DataFrame(matrix, index=protein_ids, columns=protein_ids)
-    df_matrix.to_csv(args.matrix_out, sep='\t')
-    print(f"Distance matrix saved to: {args.matrix_out}")
-
     # Perform clustering and visualization
-    proj = perform_clustering(
+    protein_ids = sorted(proteins.keys())
+    proj, processed_matrix = perform_clustering(
         matrix=matrix,
         method=args.method,
         dimensions=args.dimensions,
@@ -146,6 +142,13 @@ def main():
         min_dist=args.min_dist,
     )
 
+    # Save processed matrix
+    feature_cols = [f"feature_{i+1}" for i in range(processed_matrix.shape[1])]
+    df_processed = pd.DataFrame(processed_matrix, index=protein_ids, columns=feature_cols)
+    df_processed.to_csv(args.matrix_out, sep='\t')
+    print(f"Processed feature matrix saved to: {args.matrix_out}")
+
+    # Generate visualization
     visualize_projection(
         proj=proj,
         protein_ids=protein_ids,

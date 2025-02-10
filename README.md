@@ -96,19 +96,42 @@ t-SNE:
 
 ### Output Files
 
-The tool generates three output files:
-1. **Distance Matrix** (TSV): Pairwise distances between proteins
-2. **Visualization Plot** (PNG): Graphical representation of clusters
+The tool generates two output files:
+1. **Processed Feature Matrix** (TSV): The final processed feature matrix after imputation and scaling, ready for further analysis
+2. **Visualization Plot** (PNG): 2D/3D projection of protein structures using the selected dimensionality reduction method
+
+## Method
+
+The tool uses a multi-step process to analyze protein structural similarity:
+
+1. **Feature Extraction**: 
+   - Computes pairwise structural comparisons using TM-Align and/or RMSD
+   - Creates an n × n × m feature tensor, where:
+     - n is the number of proteins
+     - m is the number of features (TM-score and/or RMSD)
+
+2. **Data Processing**:
+   - Flattens the feature tensor to n × (n×m) matrix
+   - Handles missing values through mean imputation
+   - Optionally scales features
+
+3. **Dimensionality Reduction**:
+   - UMAP (default): Creates meaningful representations, generally outperforming PCA
+   - t-SNE: Produces comparable projections but slower than UMAP
+   - PCA: Available as a simpler alternative
+
+4. **Visualization**:
+   - Generates 2D/3D scatter plots
+   - Saves both the processed feature matrix and visualization
 
 ## Example
 
 ```bash
-# Cluster proteins using UMAP with 4 parallel processes
-python kluster.py --input-dir example_pdbs/ \
+python kluster.py --input-dir pdbs/ \
+                 --output plot.png \
+                 --matrix-out processed.tsv \
                  --method UMAP \
-                 --dimensions 2 \
-                 --processes 4 \
-                 --scale
+                 --dimensions 2
 ```
 
 ## Code Organization
