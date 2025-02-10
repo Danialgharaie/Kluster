@@ -64,6 +64,12 @@ def parse_args():
         help="Output file for the projection plot",
     )
     parser.add_argument(
+        "--matrix-out",
+        type=str,
+        default="distance_matrix.tsv",
+        help="Output file for the distance matrix (TSV format)",
+    )
+    parser.add_argument(
         "--scale",
         action="store_true",
         default=False,
@@ -122,8 +128,14 @@ def main():
         num_processes=args.processes,
     )
 
-    # Perform clustering and visualization
+    # Save distance matrix
     protein_ids = sorted(proteins.keys())
+    import pandas as pd
+    df_matrix = pd.DataFrame(matrix, index=protein_ids, columns=protein_ids)
+    df_matrix.to_csv(args.matrix_out, sep='\t')
+    print(f"Distance matrix saved to: {args.matrix_out}")
+
+    # Perform clustering and visualization
     proj = perform_clustering(
         matrix=matrix,
         method=args.method,
@@ -141,6 +153,7 @@ def main():
         method=args.method,
         dimensions=args.dimensions,
     )
+    print(f"Projection plot saved to: {args.output}")
 
 
 if __name__ == "__main__":

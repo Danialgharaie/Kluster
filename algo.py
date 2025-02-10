@@ -34,7 +34,13 @@ def compute_distance_matrix(
     use_rmsd: bool,
     num_processes: int,
 ) -> np.ndarray:
-    """Compute pairwise distance matrix using multiprocessing."""
+    """Compute pairwise distance matrix using multiprocessing.
+    
+    Returns:
+        np.ndarray: A flattened feature matrix of shape (n, n*m) where:
+            n is the number of proteins
+            m is the number of features (TM-score and/or RMSD)
+    """
     protein_ids = sorted(proteins.keys())
     combos = list(cwr(range(len(protein_ids)), 2))
 
@@ -53,14 +59,29 @@ def compute_distance_matrix(
             )
         )
 
-    # Build distance matrix
+    # Build feature tensors
     n = len(protein_ids)
-    matrix = np.zeros((n, n))
-    for idx, (i, j) in enumerate(combos):
-        for metric, value in scores[idx].items():
-            matrix[i, j] = matrix[j, i] = value
-
-    return matrix
+    features = []
+    
+    if use_tmscore:
+        tm_matrix = np.zeros((n, n))
+        for idx, (i, j) in enumerate(combos):
+            if 'tma_score' in scores[idx]:
+                tm_matrix[i, j] = tm_matrix[j, i] = scores[idx]['tma_score']
+        features.append(tm_matrix)
+    
+    if use_rmsd:
+        rmsd_matrix = np.zeros((n, n))
+        for idx, (i, j) in enumerate(combos):
+            if 'rmsd' in scores[idx]:
+                rmsd_matrix[i, j] = rmsd_matrix[j, i] = scores[idx]['rmsd']
+        features.append(rmsd_matrix)
+    
+    # Stack features into a tensor and flatten
+    feature_tensor = np.stack(features, axis=-1)  # Shape: (n, n, m)
+    flattened_matrix = feature_tensor.reshape(n, -1)  # Shape: (n, n*m)
+    
+    return flattened_matrix
 
 
 def perform_clustering(
@@ -72,7 +93,24 @@ def perform_clustering(
     n_neighbors: int = 15,
     min_dist: float = 0.1,
 ) -> np.ndarray:
-    """Perform dimensionality reduction and visualization."""
+    """Perform dimensionality reduction on the flattened feature matrix.
+    
+    Args:
+        matrix: Flattened feature matrix of shape (n, n*m)
+        method: Dimensionality reduction method (UMAP, TSNE, or PCA)
+        dimensions: Output dimensions (2 or 3)
+        scale: Whether to scale features before reduction
+        perplexity: t-SNE perplexity parameter
+        n_neighbors: UMAP n_neighbors parameter
+        min_dist: UMAP min_dist parameter
+    
+    Returns:
+        np.ndarray: Reduced dimensional representation of shape (n, dimensions)
+    """
+    import warnings
+    warnings.filterwarnings('ignore', category=FutureWarning)
+    warnings.filterwarnings('ignore', category=UserWarning)
+
     # Handle missing values
     imputer = SimpleImputer(strategy="mean")
     matrix_imputed = imputer.fit_transform(matrix)
@@ -100,7 +138,8 @@ def perform_clustering(
             n_components=dimensions,
             n_neighbors=n_neighbors,
             min_dist=min_dist,
-            random_state=42,
+            random_state=None,  # Allow parallelism
+            n_jobs=-1,  # Use all available cores
         ).fit_transform(matrix_processed)
 
     return proj
@@ -114,18 +153,25 @@ def visualize_projection(
     dimensions: int,
 ) -> None:
     """Generate 2D/3D visualization of the projection."""
+    # Create figure with appropriate size
+    plt.figure(figsize=(12, 8))
+    
     if dimensions == 2:
-        plt.figure(figsize=(10, 10))
-        plt.scatter(proj[:, 0], proj[:, 1])
-        for i, txt in enumerate(protein_ids):
-            plt.annotate(txt, (proj[i, 0], proj[i, 1]))
-    else:  # 3D
-        fig = plt.figure(figsize=(10, 10))
-        ax = fig.add_subplot(111, projection="3d")
-        ax.scatter(proj[:, 0], proj[:, 1], proj[:, 2])
-        for i, txt in enumerate(protein_ids):
-            ax.text(proj[i, 0], proj[i, 1], proj[i, 2], txt)
-
+        plt.scatter(proj[:, 0], proj[:, 1], alpha=0.7)
+        plt.xlabel('Component 1')
+        plt.ylabel('Component 2')
+    else:  # 3D plot
+        ax = plt.axes(projection='3d')
+        ax.scatter(proj[:, 0], proj[:, 1], proj[:, 2], alpha=0.7)
+        ax.set_xlabel('Component 1')
+        ax.set_ylabel('Component 2')
+        ax.set_zlabel('Component 3')
+    
     plt.title(f"{method} projection of protein structures")
-    plt.savefig(output_file)
+    
+    # Adjust layout
+    plt.tight_layout()
+    
+    # Save with high DPI for better quality
+    plt.savefig(output_file, dpi=300, bbox_inches='tight')
     plt.close()

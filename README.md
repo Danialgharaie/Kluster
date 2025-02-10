@@ -12,6 +12,7 @@ Kluster is a Python tool for clustering protein structures based on their struct
   - PCA (Principal Component Analysis)
 - Parallel processing for faster computation
 - 2D and 3D visualization options
+- Exports distance matrices and clustering results
 
 ## Requirements
 
@@ -55,38 +56,60 @@ Basic usage:
 ```bash
 python kluster.py --input-dir path/to/pdb/files
 ```
-
 Advanced options:
 ```bash
 python kluster.py --input-dir pdbs/ \
-                 --method UMAP \      # UMAP, TSNE, or PCA
-                 --dimensions 2 \     # 2 or 3
-                 --processes 4 \      # Number of parallel processes
-                 --scale             # Scale features before reduction
+                 --alignment-tool TMAlign \
+                 --method UMAP \
+                 --dimensions 2 \
+                 --processes 4 \
+                 --output projection.png \
+                 --matrix-out distances.tsv \
+                 --clusters-out clusters.tsv
 ```
 
 ### Command Line Arguments
 
+#### Input/Output
 - `--input-dir`: Directory containing PDB files (default: "pdbs/")
-- `--alignment-tool`: Structural alignment tool to use ["TMAlign", "USalign"] (default: "TMAlign")
+- `--output`: Output file for projection plot (default: "projection.png")
+- `--matrix-out`: Output file for distance matrix in TSV format (default: "distance_matrix.tsv")
+
+#### Alignment Options
+- `--alignment-tool`: Tool for structural alignment ("TMAlign" or "USalign", default: "TMAlign")
 - `--no-tmscore`: Disable TM-score calculation
 - `--no-rmsd`: Disable RMSD calculation
-- `--method`: Dimensionality reduction method ["UMAP", "TSNE", "PCA"] (default: "UMAP")
-- `--dimensions`: Number of dimensions for projection [2, 3] (default: 2)
 - `--processes`: Number of parallel processes for alignment (default: 1)
-- `--output`: Output file for the projection plot (default: "projection.png")
+
+#### Dimensionality Reduction
+- `--method`: Method for dimensionality reduction ("UMAP", "TSNE", or "PCA", default: "UMAP")
+- `--dimensions`: Number of dimensions for projection (2 or 3, default: 2)
 - `--scale`: Scale features before dimensionality reduction
 
-Method-specific parameters:
-- UMAP:
-  - `--n-neighbors`: Number of neighbors (default: 15)
-  - `--min-dist`: Minimum distance (default: 0.1)
-- t-SNE:
-  - `--perplexity`: Perplexity parameter (default: 30.0)
+#### Method-Specific Parameters
+UMAP:
+- `--n-neighbors`: Number of neighbors (default: 15)
+- `--min-dist`: Minimum distance (default: 0.1)
 
-## Output
+t-SNE:
+- `--perplexity`: Perplexity parameter (default: 30.0)
 
-The tool generates a visualization plot showing the clustering of protein structures in either 2D or 3D space. The plot is saved as an image file (default: "projection.png").
+### Output Files
+
+The tool generates three output files:
+1. **Distance Matrix** (TSV): Pairwise distances between proteins
+2. **Visualization Plot** (PNG): Graphical representation of clusters
+
+## Example
+
+```bash
+# Cluster proteins using UMAP with 4 parallel processes
+python kluster.py --input-dir example_pdbs/ \
+                 --method UMAP \
+                 --dimensions 2 \
+                 --processes 4 \
+                 --scale
+```
 
 ## Code Organization
 
