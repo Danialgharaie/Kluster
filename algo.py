@@ -1,6 +1,6 @@
 from itertools import combinations_with_replacement as cwr
 from multiprocessing import Pool
-from typing import Dict, List, Tuple
+from typing import Dict, List
 
 import matplotlib.pyplot as plt
 import numpy as np
