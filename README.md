@@ -31,16 +31,16 @@ cd Kluster
 
 2. Install dependencies:
 ```bash
-   pip install numpy pandas scikit-learn umap-learn matplotlib tqdm
+pip install numpy pandas scikit-learn umap-learn matplotlib tqdm
 ```
 
-3. Download and compile the alignment tools executable:
+3. Download and compile the alignment tools executables:
 ```bash
 # TMAlign
 wget https://zhanggroup.org/TM-align/TMalign.cpp
 g++ -static -O3 -ffast-math -lm -o TMalign TMalign.cpp
 
-# USalign (optional)
+# USalign
 wget https://zhanggroup.org/US-align/bin/module/USalign.cpp
 g++ -static -O3 -ffast-math -lm -o USalign USalign.cpp
 ```
