@@ -4,132 +4,92 @@ Kluster is a Python tool for clustering protein structures based on their struct
 
 ## Features
 
-- Structural alignment using TMAlign or USalign
-- Multiple similarity metrics (TM-score and RMSD)
-- Various dimensionality reduction methods:
-  - UMAP (Uniform Manifold Approximation and Projection)
-  - t-SNE (t-Distributed Stochastic Neighbor Embedding)
-  - PCA (Principal Component Analysis)
-- Parallel processing for faster computation
-- 2D and 3D visualization options
-- Exports distance matrices and clustering results
+- Multiple structural comparison metrics (TM-score, RMSD)
+- Support for both TMAlign and USalign
+- Dimensionality reduction using UMAP, t-SNE, or PCA
+- 2D/3D visualization options
+- Parallel processing support
 
-## Requirements
+## Method
 
-- Python 3.6+
-- TMAlign or USalign executable in the current directory
-- Required Python packages:
-  ```
-  numpy
-  pandas
-  scikit-learn
-  umap-learn
-  matplotlib
-  tqdm
-  ```
+The tool uses pairwise structural comparisons to create a feature tensor, which is then reduced to 2D/3D for visualization:
+
+1. Compute n×n×m feature tensor using TM-score and/or RMSD (n proteins, m metrics)
+2. Flatten to n×(n×m) matrix
+3. Apply dimensionality reduction (UMAP/t-SNE/PCA) to get n×2 or n×3 projection
+4. Save coordinates and generate visualization
+
+UMAP is the default method as it generally creates more meaningful representations than PCA while being faster than t-SNE.
 
 ## Installation
 
 1. Clone the repository:
-   ```bash
-   git clone https://github.com/yourusername/Kluster.git
-   cd Kluster
-   ```
+```bash
+git clone https://github.com/yourusername/Kluster.git
+cd Kluster
+```
 
-2. Install required Python packages:
-   ```bash
+2. Install dependencies:
+```bash
    pip install numpy pandas scikit-learn umap-learn matplotlib tqdm
-   ```
+```
 
-3. Install the alignment tool:
-   - TMAlign: Download from [Zhang Lab](https://zhanggroup.org/TM-align/)
-   - USalign: Download from [Zhang Lab](https://zhanggroup.org/US-align/)
-   
-   Place the executable in your working directory and make it executable:
-   ```bash
-   chmod +x TMalign  # or USalign
-   ```
+3. Download and compile the alignment tools executable:
+```bash
+# TMAlign
+wget https://zhanggroup.org/TM-align/TMalign.cpp
+g++ -static -O3 -ffast-math -lm -o TMalign TMalign.cpp
+
+# USalign (optional)
+wget https://zhanggroup.org/US-align/bin/module/USalign.cpp
+g++ -static -O3 -ffast-math -lm -o USalign USalign.cpp
+```
 
 ## Usage
 
-Basic usage:
+### Basic Command
+
 ```bash
-python kluster.py --input-dir path/to/pdb/files
-```
-Advanced options:
-```bash
-python kluster.py --input-dir pdbs/ \
-                 --alignment-tool TMAlign \
-                 --method UMAP \
-                 --dimensions 2 \
-                 --processes 4 \
-                 --output projection.png \
-                 --matrix-out distances.tsv \
-                 --clusters-out clusters.tsv
+python kluster.py --input-dir pdbs/ --output plot.png
 ```
 
-### Command Line Arguments
+### Options
 
 #### Input/Output
 - `--input-dir`: Directory containing PDB files (default: "pdbs/")
 - `--output`: Output file for projection plot (default: "projection.png")
-- `--matrix-out`: Output file for distance matrix in TSV format (default: "distance_matrix.tsv")
+- `--matrix-out`: Output file for projection coordinates (default: "projection_matrix.tsv")
 
 #### Alignment Options
 - `--alignment-tool`: Tool for structural alignment ("TMAlign" or "USalign", default: "TMAlign")
 - `--no-tmscore`: Disable TM-score calculation
 - `--no-rmsd`: Disable RMSD calculation
-- `--processes`: Number of parallel processes for alignment (default: 1)
+- `--processes`: Number of parallel processes (default: 1)
 
 #### Dimensionality Reduction
-- `--method`: Method for dimensionality reduction ("UMAP", "TSNE", or "PCA", default: "UMAP")
-- `--dimensions`: Number of dimensions for projection (2 or 3, default: 2)
-- `--scale`: Scale features before dimensionality reduction
+- `--method`: Reduction method ("UMAP", "TSNE", or "PCA", default: "UMAP")
+- `--dimensions`: Output dimensions (2 or 3, default: 2)
+- `--scale`: Scale features before reduction
 
-#### Method-Specific Parameters
-UMAP:
+#### UMAP Parameters
 - `--n-neighbors`: Number of neighbors (default: 15)
 - `--min-dist`: Minimum distance (default: 0.1)
 
-t-SNE:
-- `--perplexity`: Perplexity parameter (default: 30.0)
+#### t-SNE Parameters
+- `--perplexity`: Perplexity value (default: 30.0)
 
-### Output Files
+### Outputs
 
-The tool generates two output files:
-1. **Processed Feature Matrix** (TSV): The final processed feature matrix after imputation and scaling, ready for further analysis
-2. **Visualization Plot** (PNG): 2D/3D projection of protein structures using the selected dimensionality reduction method
-
-## Method
-
-The tool uses a multi-step process to analyze protein structural similarity:
-
-1. **Feature Extraction**: 
-   - Computes pairwise structural comparisons using TM-Align and/or RMSD
-   - Creates an n × n × m feature tensor, where:
-     - n is the number of proteins
-     - m is the number of features (TM-score and/or RMSD)
-
-2. **Data Processing**:
-   - Flattens the feature tensor to n × (n×m) matrix
-   - Handles missing values through mean imputation
-   - Optionally scales features
-
-3. **Dimensionality Reduction**:
-   - UMAP (default): Creates meaningful representations, generally outperforming PCA
-   - t-SNE: Produces comparable projections but slower than UMAP
-   - PCA: Available as a simpler alternative
-
-4. **Visualization**:
-   - Generates 2D/3D scatter plots
-   - Saves both the processed feature matrix and visualization
+The tool generates:
+1. A projection plot visualizing the structural relationships
+2. A TSV file containing the final projection coordinates
 
 ## Example
 
 ```bash
 python kluster.py --input-dir pdbs/ \
                  --output plot.png \
-                 --matrix-out processed.tsv \
+                 --matrix-out projection.tsv \
                  --method UMAP \
                  --dimensions 2
 ```
@@ -137,12 +97,8 @@ python kluster.py --input-dir pdbs/ \
 ## Code Organization
 
 - `kluster.py`: Main script and argument parsing
-- `align.py`: Structural alignment functions
-- `algo.py`: Clustering and visualization functions
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
+- `algo.py`: Core algorithms for matrix computation and dimensionality reduction
+- `align.py`: Interface to structural alignment tools
 
 ## Citation
 

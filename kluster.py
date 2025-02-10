@@ -68,8 +68,8 @@ def parse_args():
     parser.add_argument(
         "--matrix-out",
         type=str,
-        default="processed_matrix.tsv",
-        help="Output file for the processed feature matrix (TSV format)",
+        default="projection_matrix.tsv",
+        help="Output file for the final projection coordinates (TSV format)",
     )
     parser.add_argument(
         "--scale",
@@ -132,7 +132,7 @@ def main():
 
     # Perform clustering and visualization
     protein_ids = sorted(proteins.keys())
-    proj, processed_matrix = perform_clustering(
+    proj = perform_clustering(
         matrix=matrix,
         method=args.method,
         dimensions=args.dimensions,
@@ -142,11 +142,11 @@ def main():
         min_dist=args.min_dist,
     )
 
-    # Save processed matrix
-    feature_cols = [f"feature_{i+1}" for i in range(processed_matrix.shape[1])]
-    df_processed = pd.DataFrame(processed_matrix, index=protein_ids, columns=feature_cols)
-    df_processed.to_csv(args.matrix_out, sep='\t')
-    print(f"Processed feature matrix saved to: {args.matrix_out}")
+    # Save projection matrix
+    component_cols = [f"component_{i+1}" for i in range(args.dimensions)]
+    df_proj = pd.DataFrame(proj, index=protein_ids, columns=component_cols)
+    df_proj.to_csv(args.matrix_out, sep='\t')
+    print(f"Projection coordinates saved to: {args.matrix_out}")
 
     # Generate visualization
     visualize_projection(

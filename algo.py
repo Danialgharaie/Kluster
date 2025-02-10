@@ -92,7 +92,7 @@ def perform_clustering(
     perplexity: float = 30.0,
     n_neighbors: int = 15,
     min_dist: float = 0.1,
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> np.ndarray:
     """Perform dimensionality reduction on the flattened feature matrix.
     
     Args:
@@ -105,9 +105,7 @@ def perform_clustering(
         min_dist: UMAP min_dist parameter
     
     Returns:
-        tuple[np.ndarray, np.ndarray]: 
-            - Reduced dimensional representation of shape (n, dimensions)
-            - Processed input matrix after imputation and scaling
+        np.ndarray: Reduced dimensional representation of shape (n, dimensions)
     """
     import warnings
     warnings.filterwarnings('ignore', category=FutureWarning)
@@ -144,7 +142,7 @@ def perform_clustering(
             n_jobs=-1,  # Use all available cores
         ).fit_transform(matrix_processed)
 
-    return proj, matrix_processed
+    return proj
 
 
 def visualize_projection(
