@@ -1,4 +1,4 @@
-# Kluster: Protein Structure Clustering Tool
+# Kluster: Protein Structure Clustering Tool (WIP)
 
 Kluster is a Python tool for clustering protein structures based on their structural similarity. It uses structural alignment tools (TMAlign/USalign) to compute pairwise similarities between proteins and provides various dimensionality reduction methods for visualization.
 
