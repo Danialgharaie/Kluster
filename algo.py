@@ -15,6 +15,18 @@ from umap import UMAP
 from align import run_alignment
 
 
+def _run_alignment_pair(args):
+    """Helper function for parallel alignment."""
+    proteins, protein_ids, combo, alignment_tool, use_tmscore, use_rmsd = args
+    return run_alignment(
+        proteins[protein_ids[combo[0]]],
+        proteins[protein_ids[combo[1]]],
+        alignment_tool,
+        use_tmscore,
+        use_rmsd,
+    )
+
+
 def compute_distance_matrix(
     proteins: Dict[str, str],
     alignment_tool: str,
@@ -26,19 +38,16 @@ def compute_distance_matrix(
     protein_ids = sorted(proteins.keys())
     combos = list(cwr(range(len(protein_ids)), 2))
 
+    # Prepare arguments for parallel processing
+    parallel_args = [
+        (proteins, protein_ids, combo, alignment_tool, use_tmscore, use_rmsd)
+        for combo in combos
+    ]
+
     with Pool(processes=num_processes) as pool:
         scores = list(
             tqdm(
-                pool.imap(
-                    lambda c: run_alignment(
-                        proteins[protein_ids[c[0]]],
-                        proteins[protein_ids[c[1]]],
-                        alignment_tool,
-                        use_tmscore,
-                        use_rmsd,
-                    ),
-                    combos,
-                ),
+                pool.imap(_run_alignment_pair, parallel_args),
                 total=len(combos),
                 desc="Aligning structures",
             )
