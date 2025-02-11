@@ -2,15 +2,17 @@ from itertools import combinations_with_replacement as cwr
 from multiprocessing import Pool
 from typing import Dict, List
 
+import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 import numpy as np
+import plotly.express as px
+import plotly.graph_objects as go
 from mpl_toolkits.mplot3d import Axes3D
 from sklearn.cluster import DBSCAN
 from sklearn.decomposition import PCA
 from sklearn.impute import SimpleImputer
 from sklearn.manifold import TSNE
 from sklearn.preprocessing import StandardScaler
-import matplotlib.colors as mcolors
 from tqdm import tqdm
 from umap import UMAP
 
@@ -160,7 +162,7 @@ def cluster_projection(
         min_samples: DBSCAN min_samples parameter
     
     Returns:
-        np.ndarray: Cluster labels (-1 indicates noise points)
+        np.ndarray: Cluster labels (-1 indicates outlier points)
     """
     clustering = DBSCAN(eps=eps, min_samples=min_samples).fit(proj)
     return clustering.labels_
@@ -192,8 +194,8 @@ def visualize_projection(
         for i, cluster in enumerate(unique_clusters):
             mask = cluster_labels == cluster
             if cluster == -1:
-                # Plot noise points in gray
-                plt.scatter(proj[mask, 0], proj[mask, 1], c='gray', label='Noise', alpha=0.5)
+                # Plot outlier points in gray
+                plt.scatter(proj[mask, 0], proj[mask, 1], c='gray', label='Outlier', alpha=0.5)
             else:
                 plt.scatter(
                     proj[mask, 0],
@@ -210,13 +212,13 @@ def visualize_projection(
         for i, cluster in enumerate(unique_clusters):
             mask = cluster_labels == cluster
             if cluster == -1:
-                # Plot noise points in gray
+                # Plot Outlier points in gray
                 ax.scatter(
                     proj[mask, 0],
                     proj[mask, 1],
                     proj[mask, 2],
                     c='gray',
-                    label='Noise',
+                    label='Outlier',
                     alpha=0.5
                 )
             else:
@@ -244,3 +246,140 @@ def visualize_projection(
     # Save with high DPI for better quality
     plt.savefig(output_file, dpi=300, bbox_inches='tight')
     plt.close()
+
+
+def visualize_projection_interactive(
+    proj: np.ndarray,
+    protein_ids: List[str],
+    method: str,
+    cluster_labels: np.ndarray,
+    width: int = 900,
+    height: int = 600,
+) -> go.Figure:
+    """Generate interactive visualization of the projection using Plotly.
+    
+    This function is designed for use in Jupyter notebooks and returns a Plotly figure
+    that can be displayed with rich interactive features like zooming, panning, and 
+    hovering information.
+    
+    Args:
+        proj: Projection matrix of shape (n, dimensions)
+        protein_ids: List of protein identifiers
+        method: Name of dimensionality reduction method used
+        cluster_labels: Cluster assignments from DBSCAN
+        width: Width of the plot in pixels
+        height: Height of the plot in pixels
+    
+    Returns:
+        go.Figure: Interactive Plotly figure
+        
+    Example:
+        >>> fig = visualize_projection_interactive(proj, protein_ids, 'UMAP', cluster_labels)
+        >>> fig.show()  # Display in notebook
+    """
+
+    # Get unique clusters and set up colors
+    unique_clusters = np.unique(cluster_labels)
+    n_clusters = len(unique_clusters)
+    
+    # Get a qualitative color sequence
+    colors = px.colors.qualitative.Set3[:n_clusters]
+    
+    # Create figure
+    fig = go.Figure()
+    
+    # Add traces for each cluster
+    for i, cluster in enumerate(unique_clusters):
+        mask = cluster_labels == cluster
+        cluster_points = proj[mask]
+        cluster_ids = np.array(protein_ids)[mask]
+        
+        if cluster == -1:
+            # outlier points in gray
+            color = 'gray'
+            name = 'Outlier'
+        else:
+            color = colors[i]
+            name = f'Cluster {cluster}'
+        
+        if proj.shape[1] == 3:
+            # 3D scatter plot
+            fig.add_trace(go.Scatter3d(
+                x=cluster_points[:, 0],
+                y=cluster_points[:, 1],
+                z=cluster_points[:, 2],
+                mode='markers',
+                marker=dict(
+                    size=6,
+                    color=color,
+                    opacity=0.7
+                ),
+                text=cluster_ids,  # This will show on hover
+                name=name,
+                hovertemplate=(
+                    "Protein: %{text}<br>"
+                    "x: %{x:.3f}<br>"
+                    "y: %{y:.3f}<br>"
+                    "z: %{z:.3f}<br>"
+                    "<extra></extra>"  # This removes the secondary box
+                )
+            ))
+        else:
+            # 2D scatter plot
+            fig.add_trace(go.Scatter(
+                x=cluster_points[:, 0],
+                y=cluster_points[:, 1],
+                mode='markers',
+                marker=dict(
+                    size=8,
+                    color=color,
+                    opacity=0.7
+                ),
+                text=cluster_ids,  # This will show on hover
+                name=name,
+                hovertemplate=(
+                    "Protein: %{text}<br>"
+                    "x: %{x:.3f}<br>"
+                    "y: %{y:.3f}<br>"
+                    "<extra></extra>"  # This removes the secondary box
+                )
+            ))
+    
+    # Update layout
+    layout_args = dict(
+        title=dict(
+            text=f"{method} projection of protein structures<br>({n_clusters-1} clusters)",
+            x=0.5,  # Center the title
+            y=0.95
+        ),
+        width=width,
+        height=height,
+        showlegend=True,
+        legend=dict(
+            yanchor="top",
+            y=0.99,
+            xanchor="left",
+            x=1.02,
+            title=dict(text="Clusters")
+        ),
+        margin=dict(l=0, r=0, t=50, b=0),  # Tight margins
+        hovermode='closest'
+    )
+    
+    if proj.shape[1] == 3:
+        layout_args.update(
+            scene=dict(
+                xaxis_title="Component 1",
+                yaxis_title="Component 2",
+                zaxis_title="Component 3",
+            )
+        )
+    else:
+        layout_args.update(
+            xaxis_title="Component 1",
+            yaxis_title="Component 2",
+        )
+    
+    fig.update_layout(**layout_args)
+    
+    return fig
