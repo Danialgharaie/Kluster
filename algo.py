@@ -130,20 +130,18 @@ def reduce_dimensions(
         proj = TSNE(
             n_components=dimensions,
             perplexity=perplexity,
-            random_state=42,
+            init='random',
         ).fit_transform(matrix_processed)
     elif method == "PCA":
         proj = PCA(
             n_components=dimensions,
-            random_state=42,
         ).fit_transform(matrix_processed)
     elif method == "UMAP":
         proj = UMAP(
             n_components=dimensions,
             n_neighbors=n_neighbors,
             min_dist=min_dist,
-            random_state=42,  # Set for reproducibility
-            n_jobs=-1,  # Use all available cores
+            init='random',
         ).fit_transform(matrix_processed)
 
     return proj
