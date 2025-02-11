@@ -4,7 +4,12 @@ import os
 
 import pandas as pd
 
-from algo import compute_distance_matrix, perform_clustering, visualize_projection
+from algo import (
+    compute_distance_matrix,
+    reduce_dimensions,
+    cluster_projection,
+    visualize_projection,
+)
 from align import check_alignment_tool
 
 
@@ -69,7 +74,7 @@ def parse_args():
         "--matrix-out",
         type=str,
         default="projection_matrix.tsv",
-        help="Output file for the final projection coordinates (TSV format)",
+        help="Output file for the projection coordinates (TSV format)",
     )
     parser.add_argument(
         "--scale",
@@ -96,6 +101,19 @@ def parse_args():
         type=float,
         default=30.0,
         help="Perplexity parameter for t-SNE",
+    )
+    # DBSCAN parameters
+    parser.add_argument(
+        "--eps",
+        type=float,
+        default=0.5,
+        help="DBSCAN eps parameter",
+    )
+    parser.add_argument(
+        "--min-samples",
+        type=int,
+        default=5,
+        help="DBSCAN min_samples parameter",
     )
 
     return parser.parse_args()
@@ -130,9 +148,9 @@ def main():
         num_processes=args.processes,
     )
 
-    # Perform clustering and visualization
+    # Perform dimensionality reduction
     protein_ids = sorted(proteins.keys())
-    proj = perform_clustering(
+    proj = reduce_dimensions(
         matrix=matrix,
         method=args.method,
         dimensions=args.dimensions,
@@ -142,9 +160,20 @@ def main():
         min_dist=args.min_dist,
     )
 
-    # Save projection matrix
-    component_cols = [f"component_{i+1}" for i in range(args.dimensions)]
-    df_proj = pd.DataFrame(proj, index=protein_ids, columns=component_cols)
+    # Cluster the projection
+    cluster_labels = cluster_projection(
+        proj=proj,
+        eps=args.eps,
+        min_samples=args.min_samples,
+    )
+
+    # Save projection coordinates with cluster labels
+    df_proj = pd.DataFrame(
+        proj,
+        index=protein_ids,
+        columns=[f"component_{i+1}" for i in range(args.dimensions)]
+    )
+    df_proj['cluster'] = cluster_labels
     df_proj.to_csv(args.matrix_out, sep='\t')
     print(f"Projection coordinates saved to: {args.matrix_out}")
 
@@ -155,6 +184,7 @@ def main():
         output_file=args.output,
         method=args.method,
         dimensions=args.dimensions,
+        cluster_labels=cluster_labels,
     )
     print(f"Projection plot saved to: {args.output}")
 

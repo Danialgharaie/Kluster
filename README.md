@@ -7,17 +7,19 @@ Kluster is a Python tool for clustering protein structures based on their struct
 - Multiple structural comparison metrics (TM-score, RMSD)
 - Support for both TMAlign and USalign
 - Dimensionality reduction using UMAP, t-SNE, or PCA
-- 2D/3D visualization options
+- DBSCAN clustering of reduced representations
+- 2D/3D visualization with cluster coloring
 - Parallel processing support
 
 ## Method
 
-The tool uses pairwise structural comparisons to create a feature tensor, which is then reduced to 2D/3D for visualization:
+The tool uses pairwise structural comparisons to create a feature tensor, which is then reduced and clustered:
 
 1. Compute n×n×m feature tensor using TM-score and/or RMSD (n proteins, m metrics)
 2. Flatten to n×(n×m) matrix
 3. Apply dimensionality reduction (UMAP/t-SNE/PCA) to get n×2 or n×3 projection
-4. Save coordinates and generate visualization
+4. Cluster the projection using DBSCAN
+5. Generate visualization with cluster-based coloring
 
 UMAP is the default method as it generally creates more meaningful representations than PCA while being faster than t-SNE.
 
@@ -78,11 +80,15 @@ python kluster.py --input-dir pdbs/ --output plot.png
 #### t-SNE Parameters
 - `--perplexity`: Perplexity value (default: 30.0)
 
+#### Clustering Parameters
+- `--eps`: DBSCAN eps parameter (default: 0.5)
+- `--min-samples`: DBSCAN min_samples parameter (default: 5)
+
 ### Outputs
 
 The tool generates:
-1. A projection plot visualizing the structural relationships
-2. A TSV file containing the final projection coordinates
+1. A projection plot with cluster-based coloring and legend
+2. A TSV file containing the projection coordinates and cluster labels
 
 ## Example
 
@@ -91,13 +97,15 @@ python kluster.py --input-dir pdbs/ \
                  --output plot.png \
                  --matrix-out projection.tsv \
                  --method UMAP \
-                 --dimensions 2
+                 --dimensions 2 \
+                 --eps 0.5 \
+                 --min-samples 5
 ```
 
 ## Code Organization
 
 - `kluster.py`: Main script and argument parsing
-- `algo.py`: Core algorithms for matrix computation and dimensionality reduction
+- `algo.py`: Core algorithms for matrix computation, dimensionality reduction, and clustering
 - `align.py`: Interface to structural alignment tools
 
 ## Citation
@@ -105,3 +113,8 @@ python kluster.py --input-dir pdbs/ \
 This clustering algorithm is adapted from:
 
 Amani, K., Shivnauth, V., & Castroverde, C. D. M. (2023). CBP60‐DB: An AlphaFold‐predicted plant kingdom‐wide database of the CALMODULIN‐BINDING PROTEIN 60 protein family with a novel structural clustering algorithm. *Plant Direct*, 7(7). https://doi.org/10.1002/pld3.531
+
+Alignment tools:
+
+- Y. Zhang, J. Skolnick, TM-align: A protein structure alignment algorithm based on TM-score, Nucleic Acids Research, 33: 2302-2309 (2005) 
+- Chengxin Zhang, Morgan Shine, Anna Marie Pyle, Yang Zhang. US-align: Universal Structure Alignment of Proteins, Nucleic Acids and Macromolecular Complexes. Nature Methods, 19: 1109-1115 (2022)

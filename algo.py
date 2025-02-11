@@ -5,10 +5,12 @@ from typing import Dict, List
 import matplotlib.pyplot as plt
 import numpy as np
 from mpl_toolkits.mplot3d import Axes3D
+from sklearn.cluster import DBSCAN
 from sklearn.decomposition import PCA
 from sklearn.impute import SimpleImputer
 from sklearn.manifold import TSNE
 from sklearn.preprocessing import StandardScaler
+import matplotlib.colors as mcolors
 from tqdm import tqdm
 from umap import UMAP
 
@@ -84,7 +86,7 @@ def compute_distance_matrix(
     return flattened_matrix
 
 
-def perform_clustering(
+def reduce_dimensions(
     matrix: np.ndarray,
     method: str,
     dimensions: int,
@@ -138,11 +140,30 @@ def perform_clustering(
             n_components=dimensions,
             n_neighbors=n_neighbors,
             min_dist=min_dist,
-            random_state=None,  # Allow parallelism
+            random_state=42,  # Set for reproducibility
             n_jobs=-1,  # Use all available cores
         ).fit_transform(matrix_processed)
 
     return proj
+
+
+def cluster_projection(
+    proj: np.ndarray,
+    eps: float = 0.5,
+    min_samples: int = 5,
+) -> np.ndarray:
+    """Cluster the projection using DBSCAN.
+    
+    Args:
+        proj: Projection matrix of shape (n, dimensions)
+        eps: DBSCAN eps parameter
+        min_samples: DBSCAN min_samples parameter
+    
+    Returns:
+        np.ndarray: Cluster labels (-1 indicates noise points)
+    """
+    clustering = DBSCAN(eps=eps, min_samples=min_samples).fit(proj)
+    return clustering.labels_
 
 
 def visualize_projection(
@@ -151,25 +172,73 @@ def visualize_projection(
     output_file: str,
     method: str,
     dimensions: int,
+    cluster_labels: np.ndarray,
 ) -> None:
-    """Generate 2D/3D visualization of the projection."""
+    """Generate 2D/3D visualization of the projection with cluster coloring."""
+    # Set up colors for clusters
+    unique_clusters = np.unique(cluster_labels)
+    n_clusters = len(unique_clusters)
+    
+    # Get colors from tableau palette, fall back to tab20 if more needed
+    colors = list(mcolors.TABLEAU_COLORS.values())
+    if n_clusters > len(colors):
+        colors = plt.cm.tab20(np.linspace(0, 1, n_clusters))
+    
     # Create figure with appropriate size
     plt.figure(figsize=(12, 8))
     
     if dimensions == 2:
-        plt.scatter(proj[:, 0], proj[:, 1], alpha=0.7)
+        # Plot each cluster
+        for i, cluster in enumerate(unique_clusters):
+            mask = cluster_labels == cluster
+            if cluster == -1:
+                # Plot noise points in gray
+                plt.scatter(proj[mask, 0], proj[mask, 1], c='gray', label='Noise', alpha=0.5)
+            else:
+                plt.scatter(
+                    proj[mask, 0],
+                    proj[mask, 1],
+                    c=[colors[i]],
+                    label=f'Cluster {cluster}',
+                    alpha=0.7
+                )
+        
         plt.xlabel('Component 1')
         plt.ylabel('Component 2')
     else:  # 3D plot
         ax = plt.axes(projection='3d')
-        ax.scatter(proj[:, 0], proj[:, 1], proj[:, 2], alpha=0.7)
+        for i, cluster in enumerate(unique_clusters):
+            mask = cluster_labels == cluster
+            if cluster == -1:
+                # Plot noise points in gray
+                ax.scatter(
+                    proj[mask, 0],
+                    proj[mask, 1],
+                    proj[mask, 2],
+                    c='gray',
+                    label='Noise',
+                    alpha=0.5
+                )
+            else:
+                ax.scatter(
+                    proj[mask, 0],
+                    proj[mask, 1],
+                    proj[mask, 2],
+                    c=[colors[i]],
+                    label=f'Cluster {cluster}',
+                    alpha=0.7
+                )
+        
         ax.set_xlabel('Component 1')
         ax.set_ylabel('Component 2')
         ax.set_zlabel('Component 3')
     
-    plt.title(f"{method} projection of protein structures")
+    plt.title(f"{method} projection of protein structures\n({n_clusters-1} clusters)")
     
-    # Adjust layout
+    # Add legend outside the plot
+    plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
+    
+    # Adjust layout to prevent legend cutoff
     plt.tight_layout()
     
     # Save with high DPI for better quality
