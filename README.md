@@ -37,14 +37,19 @@ pip install numpy pandas scikit-learn umap-learn matplotlib tqdm
 ```
 
 3. Download and compile the alignment tools executables:
+
+Place the compiled `TMalign` and `USalign` executables in the `bin/` directory before running the script. These tools are required for structural alignment.
+
 ```bash
-# TMAlign
+# TMalign
 wget https://zhanggroup.org/TM-align/TMalign.cpp
-g++ -static -O3 -ffast-math -lm -o TMalign TMalign.cpp
+g++ -static -O3 -ffast-math -lm -o bin/TMalign TMalign.cpp
+chmod +x bin/TMalign
 
 # USalign
 wget https://zhanggroup.org/US-align/bin/module/USalign.cpp
-g++ -static -O3 -ffast-math -lm -o USalign USalign.cpp
+g++ -static -O3 -ffast-math -lm -o bin/USalign USalign.cpp
+chmod +x bin/USalign
 ```
 
 ## Usage
