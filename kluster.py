@@ -10,7 +10,7 @@ from algo import (
     cluster_projection,
     visualize_projection,
 )
-from align import check_alignment_tool
+from .align import check_alignment_tool
 
 
 def parse_args():

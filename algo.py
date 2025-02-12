@@ -16,7 +16,7 @@ from sklearn.preprocessing import StandardScaler
 from tqdm import tqdm
 from umap import UMAP
 
-from align import run_alignment
+from .align import run_alignment
 
 
 def _run_alignment_pair(args):
