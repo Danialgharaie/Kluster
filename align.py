@@ -6,8 +6,7 @@ from typing import Any, Dict
 
 def check_alignment_tool(tool_name: str) -> str:
     """Check if the specified alignment tool exists and is executable."""
-    tool_path = os.path.join(os.path.dirname(__file__), "bin", 
-                              "TMalign" if tool_name == "TMAlign" else "USalign")
+    tool_path = os.path.join(os.path.dirname(__file__), "bin", tool_name)
     if not os.path.exists(tool_path) or not os.access(tool_path, os.X_OK):
         raise FileNotFoundError(f"{tool_name} executable not found at {tool_path}")
     return tool_path

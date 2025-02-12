@@ -5,7 +5,7 @@ Kluster is a Python tool for clustering protein structures based on their struct
 ## Features
 
 - Multiple structural comparison metrics (TM-score, RMSD)
-- Support for both TMAlign and USalign
+- Support for both TMalign and USalign
 - Dimensionality reduction using UMAP, t-SNE, or PCA
 - DBSCAN clustering of reduced representations
 - 2D/3D visualization with cluster coloring
@@ -68,7 +68,7 @@ python kluster.py --input-dir pdbs/ --output plot.png
 - `--matrix-out`: Output file for projection coordinates (default: "projection_matrix.tsv")
 
 #### Alignment Options
-- `--alignment-tool`: Tool for structural alignment ("TMAlign" or "USalign", default: "TMAlign")
+- `--alignment-tool`: Tool for structural alignment ("TMalign" or "USalign", default: "TMalign")
 - `--no-tmscore`: Disable TM-score calculation
 - `--no-rmsd`: Disable RMSD calculation
 - `--processes`: Number of parallel processes (default: 1)
