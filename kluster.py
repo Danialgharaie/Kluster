@@ -4,7 +4,7 @@ import os
 
 import pandas as pd
 
-from algo import (
+from .algo import (
     compute_distance_matrix,
     reduce_dimensions,
     cluster_projection,
