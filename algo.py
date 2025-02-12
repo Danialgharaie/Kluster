@@ -1,6 +1,6 @@
 from itertools import combinations_with_replacement as cwr
 from multiprocessing import Pool
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
@@ -37,13 +37,15 @@ def compute_distance_matrix(
     use_tmscore: bool,
     use_rmsd: bool,
     num_processes: int,
-) -> np.ndarray:
+) -> Tuple[np.ndarray, List[str]]:
     """Compute pairwise distance matrix using multiprocessing.
     
     Returns:
-        np.ndarray: A flattened feature matrix of shape (n, n*m) where:
-            n is the number of proteins
-            m is the number of features (TM-score and/or RMSD)
+        tuple: A tuple containing:
+            - np.ndarray: A flattened feature matrix of shape (n, n*m) where:
+                n is the number of proteins
+                m is the number of features (TM-score and/or RMSD)
+            - List[str]: Sorted list of protein IDs corresponding to matrix rows/columns
     """
     protein_ids = sorted(proteins.keys())
     combos = list(cwr(range(len(protein_ids)), 2))
@@ -85,7 +87,7 @@ def compute_distance_matrix(
     feature_tensor = np.stack(features, axis=-1)  # Shape: (n, n, m)
     flattened_matrix = feature_tensor.reshape(n, -1)  # Shape: (n, n*m)
     
-    return flattened_matrix
+    return flattened_matrix, protein_ids
 
 
 def reduce_dimensions(

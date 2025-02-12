@@ -139,8 +139,8 @@ def main():
     if not proteins:
         raise ValueError(f"No PDB files found in {args.input_dir}")
 
-    # Compute distance matrix
-    matrix = compute_distance_matrix(
+    # Compute distance matrix and get sorted protein IDs
+    matrix, protein_ids = compute_distance_matrix(
         proteins=proteins,
         alignment_tool=args.alignment_tool,
         use_tmscore=args.use_tmscore,
@@ -149,7 +149,6 @@ def main():
     )
 
     # Perform dimensionality reduction
-    protein_ids = sorted(proteins.keys())
     proj = reduce_dimensions(
         matrix=matrix,
         method=args.method,
@@ -170,7 +169,7 @@ def main():
     # Save projection coordinates with cluster labels
     df_proj = pd.DataFrame(
         proj,
-        index=protein_ids,
+        index=protein_ids,  # Use the same sorted protein_ids
         columns=[f"component_{i+1}" for i in range(args.dimensions)]
     )
     df_proj['cluster'] = cluster_labels
