@@ -1,6 +1,6 @@
 # Kluster: Protein Structure Clustering Tool
 
-Kluster is a Python tool for clustering protein structures based on their structural similarity. It uses structural alignment tools (TMAlign/USalign) to compute pairwise similarities between proteins and provides various dimensionality reduction methods for visualization.
+Kluster is a Python tool for clustering protein structures (monomers) based on their structural similarity. It uses structural alignment tools (TMAlign/USalign) to compute pairwise similarities between proteins and provides various dimensionality reduction methods for visualization.
 
 ## Features
 
