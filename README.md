@@ -113,6 +113,12 @@ python kluster.py --input-dir pdbs/ \
 - `algo.py`: Core algorithms for matrix computation, dimensionality reduction, and clustering
 - `align.py`: Interface to structural alignment tools
 
+## Using in Neurosnap
+
+If you don't want to set up and do the clustering and computations yourself, you can use Kluster service in Neurosnap to handle it all in an easy-to-use UI.
+
+Link: <https://neurosnap.ai/service/Kluster>
+
 ## Citation
 
 This clustering algorithm is adapted from:
