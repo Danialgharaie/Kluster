@@ -5,9 +5,9 @@ import os
 import pandas as pd
 
 from .algo import (
+    cluster_projection,
     compute_distance_matrix,
     reduce_dimensions,
-    cluster_projection,
     visualize_projection,
 )
 from .align import check_alignment_tool
@@ -170,10 +170,10 @@ def main():
     df_proj = pd.DataFrame(
         proj,
         index=protein_ids,  # Use the same sorted protein_ids
-        columns=[f"component_{i+1}" for i in range(args.dimensions)]
+        columns=[f"component_{i + 1}" for i in range(args.dimensions)],
     )
-    df_proj['cluster'] = cluster_labels
-    df_proj.to_csv(args.matrix_out, sep='\t')
+    df_proj["cluster"] = cluster_labels
+    df_proj.to_csv(args.matrix_out, sep="\t")
     print(f"Projection coordinates saved to: {args.matrix_out}")
 
     # Generate visualization

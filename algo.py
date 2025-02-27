@@ -39,7 +39,7 @@ def compute_distance_matrix(
     num_processes: int,
 ) -> Tuple[np.ndarray, List[str]]:
     """Compute pairwise distance matrix using multiprocessing.
-    
+
     Returns:
         tuple: A tuple containing:
             - np.ndarray: A flattened feature matrix of shape (n, n*m) where:
@@ -68,25 +68,25 @@ def compute_distance_matrix(
     # Build feature tensors
     n = len(protein_ids)
     features = []
-    
+
     if use_tmscore:
         tm_matrix = np.zeros((n, n))
         for idx, (i, j) in enumerate(combos):
-            if 'tma_score' in scores[idx]:
-                tm_matrix[i, j] = tm_matrix[j, i] = scores[idx]['tma_score']
+            if "tma_score" in scores[idx]:
+                tm_matrix[i, j] = tm_matrix[j, i] = scores[idx]["tma_score"]
         features.append(tm_matrix)
-    
+
     if use_rmsd:
         rmsd_matrix = np.zeros((n, n))
         for idx, (i, j) in enumerate(combos):
-            if 'rmsd' in scores[idx]:
-                rmsd_matrix[i, j] = rmsd_matrix[j, i] = scores[idx]['rmsd']
+            if "rmsd" in scores[idx]:
+                rmsd_matrix[i, j] = rmsd_matrix[j, i] = scores[idx]["rmsd"]
         features.append(rmsd_matrix)
-    
+
     # Stack features into a tensor and flatten
     feature_tensor = np.stack(features, axis=-1)  # Shape: (n, n, m)
     flattened_matrix = feature_tensor.reshape(n, -1)  # Shape: (n, n*m)
-    
+
     return flattened_matrix, protein_ids
 
 
@@ -100,7 +100,7 @@ def reduce_dimensions(
     min_dist: float = 0.1,
 ) -> np.ndarray:
     """Perform dimensionality reduction on the flattened feature matrix.
-    
+
     Args:
         matrix: Flattened feature matrix of shape (n, n*m)
         method: Dimensionality reduction method (UMAP, TSNE, or PCA)
@@ -109,13 +109,14 @@ def reduce_dimensions(
         perplexity: t-SNE perplexity parameter
         n_neighbors: UMAP n_neighbors parameter
         min_dist: UMAP min_dist parameter
-    
+
     Returns:
         np.ndarray: Reduced dimensional representation of shape (n, dimensions)
     """
     import warnings
-    warnings.filterwarnings('ignore', category=FutureWarning)
-    warnings.filterwarnings('ignore', category=UserWarning)
+
+    warnings.filterwarnings("ignore", category=FutureWarning)
+    warnings.filterwarnings("ignore", category=UserWarning)
 
     # Handle missing values
     imputer = SimpleImputer(strategy="mean")
@@ -132,7 +133,7 @@ def reduce_dimensions(
         proj = TSNE(
             n_components=dimensions,
             perplexity=perplexity,
-            init='random',
+            init="random",
         ).fit_transform(matrix_processed)
     elif method == "PCA":
         proj = PCA(
@@ -143,7 +144,7 @@ def reduce_dimensions(
             n_components=dimensions,
             n_neighbors=n_neighbors,
             min_dist=min_dist,
-            init='random',
+            init="random",
         ).fit_transform(matrix_processed)
 
     return proj
@@ -155,12 +156,12 @@ def cluster_projection(
     min_samples: int = 5,
 ) -> np.ndarray:
     """Cluster the projection using DBSCAN.
-    
+
     Args:
         proj: Projection matrix of shape (n, dimensions)
         eps: DBSCAN eps parameter
         min_samples: DBSCAN min_samples parameter
-    
+
     Returns:
         np.ndarray: Cluster labels (-1 indicates outlier points)
     """
@@ -180,35 +181,37 @@ def visualize_projection(
     # Set up colors for clusters
     unique_clusters = np.unique(cluster_labels)
     n_clusters = len(unique_clusters)
-    
+
     # Get colors from tableau palette, fall back to tab20 if more needed
     colors = list(mcolors.TABLEAU_COLORS.values())
     if n_clusters > len(colors):
         colors = plt.cm.tab20(np.linspace(0, 1, n_clusters))
-    
+
     # Create figure with appropriate size
     plt.figure(figsize=(12, 8))
-    
+
     if dimensions == 2:
         # Plot each cluster
         for i, cluster in enumerate(unique_clusters):
             mask = cluster_labels == cluster
             if cluster == -1:
                 # Plot outlier points in gray
-                plt.scatter(proj[mask, 0], proj[mask, 1], c='gray', label='Outlier', alpha=0.5)
+                plt.scatter(
+                    proj[mask, 0], proj[mask, 1], c="gray", label="Outlier", alpha=0.5
+                )
             else:
                 plt.scatter(
                     proj[mask, 0],
                     proj[mask, 1],
                     c=[colors[i]],
-                    label=f'Cluster {cluster}',
-                    alpha=0.7
+                    label=f"Cluster {cluster}",
+                    alpha=0.7,
                 )
-        
-        plt.xlabel('Component 1')
-        plt.ylabel('Component 2')
+
+        plt.xlabel("Component 1")
+        plt.ylabel("Component 2")
     else:  # 3D plot
-        ax = plt.axes(projection='3d')
+        ax = plt.axes(projection="3d")
         for i, cluster in enumerate(unique_clusters):
             mask = cluster_labels == cluster
             if cluster == -1:
@@ -217,9 +220,9 @@ def visualize_projection(
                     proj[mask, 0],
                     proj[mask, 1],
                     proj[mask, 2],
-                    c='gray',
-                    label='Outlier',
-                    alpha=0.5
+                    c="gray",
+                    label="Outlier",
+                    alpha=0.5,
                 )
             else:
                 ax.scatter(
@@ -227,24 +230,24 @@ def visualize_projection(
                     proj[mask, 1],
                     proj[mask, 2],
                     c=[colors[i]],
-                    label=f'Cluster {cluster}',
-                    alpha=0.7
+                    label=f"Cluster {cluster}",
+                    alpha=0.7,
                 )
-        
-        ax.set_xlabel('Component 1')
-        ax.set_ylabel('Component 2')
-        ax.set_zlabel('Component 3')
-    
-    plt.title(f"{method} projection of protein structures\n({n_clusters-1} clusters)")
-    
+
+        ax.set_xlabel("Component 1")
+        ax.set_ylabel("Component 2")
+        ax.set_zlabel("Component 3")
+
+    plt.title(f"{method} projection of protein structures\n({n_clusters - 1} clusters)")
+
     # Add legend outside the plot
-    plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
-    
+    plt.legend(bbox_to_anchor=(1.05, 1), loc="upper left", borderaxespad=0.0)
+
     # Adjust layout to prevent legend cutoff
     plt.tight_layout()
-    
+
     # Save with high DPI for better quality
-    plt.savefig(output_file, dpi=300, bbox_inches='tight')
+    plt.savefig(output_file, dpi=300, bbox_inches="tight")
     plt.close()
 
 
@@ -257,11 +260,11 @@ def visualize_projection_interactive(
     height: int = 600,
 ) -> go.Figure:
     """Generate interactive visualization of the projection using Plotly.
-    
+
     This function is designed for use in Jupyter notebooks and returns a Plotly figure
-    that can be displayed with rich interactive features like zooming, panning, and 
+    that can be displayed with rich interactive features like zooming, panning, and
     hovering information.
-    
+
     Args:
         proj: Projection matrix of shape (n, dimensions)
         protein_ids: List of protein identifiers
@@ -269,10 +272,10 @@ def visualize_projection_interactive(
         cluster_labels: Cluster assignments from DBSCAN
         width: Width of the plot in pixels
         height: Height of the plot in pixels
-    
+
     Returns:
         go.Figure: Interactive Plotly figure
-        
+
     Example:
         >>> fig = visualize_projection_interactive(proj, protein_ids, 'UMAP', cluster_labels)
         >>> fig.show()  # Display in notebook
@@ -281,91 +284,83 @@ def visualize_projection_interactive(
     # Get unique clusters and set up colors
     unique_clusters = np.unique(cluster_labels)
     n_clusters = len(unique_clusters)
-    
+
     # Get a qualitative color sequence
     colors = px.colors.qualitative.Set3[:n_clusters]
-    
+
     # Create figure
     fig = go.Figure()
-    
+
     # Add traces for each cluster
     for i, cluster in enumerate(unique_clusters):
         mask = cluster_labels == cluster
         cluster_points = proj[mask]
         cluster_ids = np.array(protein_ids)[mask]
-        
+
         if cluster == -1:
             # outlier points in gray
-            color = 'gray'
-            name = 'Outlier'
+            color = "gray"
+            name = "Outlier"
         else:
             color = colors[i]
-            name = f'Cluster {cluster}'
-        
+            name = f"Cluster {cluster}"
+
         if proj.shape[1] == 3:
             # 3D scatter plot
-            fig.add_trace(go.Scatter3d(
-                x=cluster_points[:, 0],
-                y=cluster_points[:, 1],
-                z=cluster_points[:, 2],
-                mode='markers',
-                marker=dict(
-                    size=6,
-                    color=color,
-                    opacity=0.7
-                ),
-                text=cluster_ids,  # This will show on hover
-                name=name,
-                hovertemplate=(
-                    "Protein: %{text}<br>"
-                    "x: %{x:.3f}<br>"
-                    "y: %{y:.3f}<br>"
-                    "z: %{z:.3f}<br>"
-                    "<extra></extra>"  # This removes the secondary box
+            fig.add_trace(
+                go.Scatter3d(
+                    x=cluster_points[:, 0],
+                    y=cluster_points[:, 1],
+                    z=cluster_points[:, 2],
+                    mode="markers",
+                    marker=dict(size=6, color=color, opacity=0.7),
+                    text=cluster_ids,  # This will show on hover
+                    name=name,
+                    hovertemplate=(
+                        "Protein: %{text}<br>"
+                        "x: %{x:.3f}<br>"
+                        "y: %{y:.3f}<br>"
+                        "z: %{z:.3f}<br>"
+                        "<extra></extra>"  # This removes the secondary box
+                    ),
                 )
-            ))
+            )
         else:
             # 2D scatter plot
-            fig.add_trace(go.Scatter(
-                x=cluster_points[:, 0],
-                y=cluster_points[:, 1],
-                mode='markers',
-                marker=dict(
-                    size=8,
-                    color=color,
-                    opacity=0.7
-                ),
-                text=cluster_ids,  # This will show on hover
-                name=name,
-                hovertemplate=(
-                    "Protein: %{text}<br>"
-                    "x: %{x:.3f}<br>"
-                    "y: %{y:.3f}<br>"
-                    "<extra></extra>"  # This removes the secondary box
+            fig.add_trace(
+                go.Scatter(
+                    x=cluster_points[:, 0],
+                    y=cluster_points[:, 1],
+                    mode="markers",
+                    marker=dict(size=8, color=color, opacity=0.7),
+                    text=cluster_ids,  # This will show on hover
+                    name=name,
+                    hovertemplate=(
+                        "Protein: %{text}<br>"
+                        "x: %{x:.3f}<br>"
+                        "y: %{y:.3f}<br>"
+                        "<extra></extra>"  # This removes the secondary box
+                    ),
                 )
-            ))
-    
+            )
+
     # Update layout
     layout_args = dict(
         title=dict(
-            text=f"{method} projection of protein structures<br>({n_clusters-1} clusters)",
+            text=f"{method} projection of protein structures<br>({n_clusters - 1} clusters)",
             x=0.5,  # Center the title
-            y=0.95
+            y=0.95,
         ),
         width=width,
         height=height,
         showlegend=True,
         legend=dict(
-            yanchor="top",
-            y=0.99,
-            xanchor="left",
-            x=1.02,
-            title=dict(text="Clusters")
+            yanchor="top", y=0.99, xanchor="left", x=1.02, title=dict(text="Clusters")
         ),
         margin=dict(l=0, r=0, t=50, b=0),  # Tight margins
-        hovermode='closest'
+        hovermode="closest",
     )
-    
+
     if proj.shape[1] == 3:
         layout_args.update(
             scene=dict(
@@ -379,7 +374,7 @@ def visualize_projection_interactive(
             xaxis_title="Component 1",
             yaxis_title="Component 2",
         )
-    
+
     fig.update_layout(**layout_args)
-    
+
     return fig
