@@ -118,6 +118,7 @@ python kluster.py --input-dir pdbs/ \
 If you don't want to set up and do the clustering and computations yourself, you can use Kluster service in Neurosnap to handle it all in an easy-to-use UI.
 
 Service: <https://neurosnap.ai/service/Kluster>
+
 Our blog post on protein clustering: <https://neurosnap.ai/blog/post/clustering-proteins-by-structure-the-ultimate-guide/67c238ea7748b987ae26d034>
 
 ## Citation
