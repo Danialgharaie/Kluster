@@ -106,14 +106,28 @@ def parse_args():
     parser.add_argument(
         "--eps",
         type=float,
-        default=0.5,
-        help="DBSCAN eps parameter",
+        default=None,
+        help="DBSCAN eps parameter. If not provided, it's estimated automatically.",
     )
     parser.add_argument(
         "--min-samples",
         type=int,
-        default=5,
-        help="DBSCAN min_samples parameter",
+        default=None,
+        help="DBSCAN min_samples parameter. If not provided, it's estimated automatically.",
+    )
+
+    # cluster_projection specific parameters
+    parser.add_argument(
+        "--scaling-factor",
+        type=float,
+        default=0.05,
+        help="Fraction of projection range for eps if eps is not provided",
+    )
+    parser.add_argument(
+        "--eps-floor",
+        type=float,
+        default=1e-8,
+        help="Minimum eps value if eps is not provided",
     )
 
     return parser.parse_args()
@@ -164,6 +178,8 @@ def main():
         proj=proj,
         eps=args.eps,
         min_samples=args.min_samples,
+        scaling_factor=args.scaling_factor,
+        eps_floor=args.eps_floor,
     )
 
     # Save projection coordinates with cluster labels
