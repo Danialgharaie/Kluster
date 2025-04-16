@@ -1,3 +1,4 @@
+import math
 from itertools import combinations_with_replacement as cwr
 from multiprocessing import Pool
 from typing import Dict, List, Tuple
@@ -152,20 +153,62 @@ def reduce_dimensions(
 
 def cluster_projection(
     proj: np.ndarray,
-    eps: float = 0.5,
-    min_samples: int = 5,
+    eps: float | None = None,
+    min_samples: int | None = None,
+    scaling_factor: float = 0.05,
+    eps_floor: float = 1e-8,
 ) -> np.ndarray:
-    """Cluster the projection using DBSCAN.
+    """
+    Cluster the projection using DBSCAN and raise error on too small input.
+
+    Expects proj to be the two dimensional output of reduce_dimensions
+    array shape is (n_samples, n_dims)
 
     Args:
-        proj: Projection matrix of shape (n, dimensions)
-        eps: DBSCAN eps parameter
-        min_samples: DBSCAN min_samples parameter
+        proj: Array with shape (n_samples, n_dims)
+        eps: If provided use directly otherwise estimate as scaling_factor times the range
+        min_samples: If provided use directly otherwise estimate as max(1, int(log(n_samples)) plus one)
+        scaling_factor: Fraction of the projection range for eps
+        eps_floor: Minimum eps to avoid zero when all points are the same
 
     Returns:
-        np.ndarray: Cluster labels (-1 indicates outlier points)
+        labels: Cluster labels with negative one for noise
+
+    Raises:
+        ValueError: If proj is not a two dimensional array or has fewer than two samples
     """
-    clustering = DBSCAN(eps=eps, min_samples=min_samples).fit(proj)
+    # verify the input is two dimensional
+    if proj.ndim != 2:
+        raise ValueError(
+            f"Expected two dimensional input from reduce_dimensions got shape {proj.shape}"
+        )
+
+    n_points, n_dims = proj.shape
+
+    # require at least two samples
+    if n_points < 2:
+        raise ValueError(f"Need at least two samples to cluster got {n_points}")
+
+    # estimate eps if not provided
+    if eps is None:
+        if n_dims == 1:
+            data_range = float(np.ptp(proj))
+        else:
+            ranges = np.ptp(proj, axis=0)
+            data_range = float(np.linalg.norm(ranges))
+        final_eps = scaling_factor * data_range
+        final_eps = final_eps if final_eps > 0 else eps_floor
+    else:
+        final_eps = eps
+
+    # estimate min samples if not provided
+    if min_samples is None:
+        final_min = max(1, int(math.log(n_points)) + 1)
+    else:
+        final_min = max(1, min_samples)
+
+    # fit DBSCAN and return labels
+    clustering = DBSCAN(eps=final_eps, min_samples=final_min).fit(proj)
     return clustering.labels_
 
 
