@@ -89,7 +89,7 @@ python kluster.py --input-dir pdbs/ --output plot.png
 - `--eps`: DBSCAN eps parameter (float). If not provided, it is estimated automatically based on the data range and `--scaling-factor`.
 - `--min-samples`: DBSCAN min_samples parameter (int). If not provided, it is estimated automatically based on the number of samples (log(n) + 1).
 - `--scaling-factor`: Fraction of the projection range used for automatic `eps` estimation (default: 0.05).
-- `--eps-floor`: Minimum `eps` value used during automatic estimation to prevent zero (default: 1e-8).
+- `--eps-floor`: Minimum `eps` value used during automatic estimation to prevent zero (default: 1e-4).
 
 ### Outputs
 

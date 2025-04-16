@@ -156,7 +156,7 @@ def cluster_projection(
     eps: float | None = None,
     min_samples: int | None = None,
     scaling_factor: float = 0.05,
-    eps_floor: float = 1e-8,
+    eps_floor: float = 1e-4,
 ) -> np.ndarray:
     """
     Cluster the projection using DBSCAN and raise error on too small input.
@@ -197,7 +197,7 @@ def cluster_projection(
             ranges = np.ptp(proj, axis=0)
             data_range = float(np.linalg.norm(ranges))
         final_eps = scaling_factor * data_range
-        final_eps = final_eps if final_eps > 0 else eps_floor
+        final_eps = max(final_eps, eps_floor)
     else:
         final_eps = eps
 

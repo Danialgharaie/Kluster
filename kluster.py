@@ -126,7 +126,7 @@ def parse_args():
     parser.add_argument(
         "--eps-floor",
         type=float,
-        default=1e-8,
+        default=1e-4,
         help="Minimum eps value if eps is not provided",
     )
 
