@@ -57,7 +57,7 @@ chmod +x bin/USalign
 ### Basic Command
 
 ```bash
-python kluster.py --input-dir pdbs/ --output plot.png
+python kluster_run.py --input-dir pdbs/ --output plot.png
 ```
 
 ### Options

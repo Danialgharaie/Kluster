@@ -4,13 +4,13 @@ import os
 
 import pandas as pd
 
-from .algo import (
+from kluster.algo import (
     cluster_projection,
     compute_distance_matrix,
     reduce_dimensions,
     visualize_projection,
 )
-from .align import check_alignment_tool
+from kluster.align import check_alignment_tool
 
 
 def parse_args():
@@ -28,8 +28,8 @@ def parse_args():
     parser.add_argument(
         "--alignment-tool",
         type=str,
-        choices=["TMAlign", "USalign"],
-        default="TMAlign",
+        choices=["TMalign", "USalign"],
+        default="TMalign",
         help="Structural alignment tool to use",
     )
     parser.add_argument(
